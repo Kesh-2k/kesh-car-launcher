@@ -1,0 +1,10 @@
+<p>Kesh Car é uma tela inicial gratuita e de código aberto para as multimídias Android de carro (as de 1280×720 com chips RK3326, T3, UIS7862 e parecidos). É pequena e rápida, mesmo em aparelhos fracos.</p>
+<ul>
+<li><b>Mapa</b>: OpenStreetMap ao vivo seguindo o GPS, com velocímetro e modo noturno automático.</li>
+<li><b>Música</b>: cartão grande que funciona com qualquer app de música (capa, tocar/pausar, próxima/anterior).</li>
+<li><b>Num relance</b>: relógio, Wi-Fi, Bluetooth e o tempo agora (Open-Meteo, sem conta).</li>
+<li><b>Meu carro</b>: números da viagem medidos pelo GPS (distância, tempo dirigindo, velocidade máxima), com nome e foto do seu carro.</li>
+<li><b>Atalhos</b>: barra lateral com seus apps favoritos (navegação, música, rádio, telefone).</li>
+<li><b>Nomes de rua sem internet</b> (opcional), gerados com dados do OpenStreetMap da sua região.</li>
+</ul>
+<p>Sem anúncios, sem rastreamento, sem contas. Dados do mapa © colaboradores do OpenStreetMap (ODbL).</p>

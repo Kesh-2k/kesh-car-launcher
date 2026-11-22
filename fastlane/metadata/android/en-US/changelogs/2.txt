@@ -1,0 +1,1 @@
+Gradle wrapper and store metadata for F-Droid. No changes in the app.
