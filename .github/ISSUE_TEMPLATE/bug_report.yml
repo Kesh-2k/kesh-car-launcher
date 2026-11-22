@@ -1,0 +1,47 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time to report a problem! Head units vary a lot, so device details help a ton.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect and what happened instead?
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Head unit
+      description: Brand/model, SoC (e.g. RK3326, UIS7862, MTK8259), firmware vendor if known (Jancar, FYT, MTCD...)
+      placeholder: e.g. Jancar 9" RK3326, 4 GB RAM
+    validations:
+      required: true
+  - type: input
+    id: android
+    attributes:
+      label: Android version
+      description: As reported by the system (Settings → About). Many units report a higher version than they really run.
+      placeholder: e.g. Android 11 (says 13)
+    validations:
+      required: true
+  - type: input
+    id: screen
+    attributes:
+      label: Screen resolution
+      placeholder: e.g. 1280x720
+  - type: input
+    id: version
+    attributes:
+      label: Kesh Car version
+      placeholder: e.g. 1.0.0
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Screenshots or logs
+      description: A photo of the screen helps. If you can use ADB, `adb logcat -d | grep -i keshcar` is gold.

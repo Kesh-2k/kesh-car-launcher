@@ -1,0 +1,40 @@
+plugins { id 'com.android.application' }
+
+// Release signing is optional and comes from environment variables, so no keystore or password lives in the repo:
+//   KESHCAR_KEYSTORE=/path/to/release.jks KESHCAR_KEYSTORE_PASSWORD=... KESHCAR_KEY_ALIAS=... [KESHCAR_KEY_PASSWORD=...]
+// Without them, `assembleRelease` produces an unsigned APK (sign it yourself with apksigner).
+def ks = System.getenv('KESHCAR_KEYSTORE')
+
+android {
+  namespace 'io.github.kesh2k.keshcar'
+  compileSdk 34
+  defaultConfig {
+    applicationId 'io.github.kesh2k.keshcar'
+    minSdk 24
+    targetSdk 30
+    versionCode 1
+    versionName '1.0.0'
+  }
+  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+  if (ks) {
+    signingConfigs {
+      release {
+        storeFile file(ks)
+        storePassword System.getenv('KESHCAR_KEYSTORE_PASSWORD')
+        keyAlias System.getenv('KESHCAR_KEY_ALIAS')
+        keyPassword System.getenv('KESHCAR_KEY_PASSWORD') ?: System.getenv('KESHCAR_KEYSTORE_PASSWORD')
+      }
+    }
+  }
+  lint { checkReleaseBuilds false; abortOnError false }
+  buildTypes {
+    release {
+      if (ks) signingConfig signingConfigs.release
+      minifyEnabled true
+      shrinkResources true
+      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+    }
+  }
+}
+
+dependencies { implementation 'org.osmdroid:osmdroid-android:6.1.20' }

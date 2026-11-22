@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name" translatable="false">Kesh Car</string>
+  <string name="osm_attribution">© OpenStreetMap contributors</string>
+
+  <!-- map -->
+  <string name="you_are_on">YOU ARE ON</string>
+  <string name="searching_gps">Searching for GPS…</string>
+  <string name="gps_off">GPS is off</string>
+  <string name="gps_off_label">GPS OFF</string>
+  <string name="gps_searching_label">SEARCHING FOR GPS</string>
+  <string name="gps_last_position_label">LAST KNOWN POSITION · SEARCHING FOR GPS</string>
+  <plurals name="satellites">
+    <item quantity="one">%d SATELLITE</item>
+    <item quantity="other">%d SATELLITES</item>
+  </plurals>
+  <string name="no_location_permission">No location permission</string>
+  <string name="offline_last_street">OFFLINE · LAST KNOWN STREET</string>
+  <string name="streets_imported">Offline street names loaded</string>
+  <string name="streets_invalid">That is not a Kesh Car streets.bin file</string>
+  <string name="where_to">Where to?</string>
+  <string name="speed_unit">km/h</string>
+
+  <!-- quick tiles -->
+  <string name="wifi">Wi-Fi</string>
+  <string name="bluetooth">Bluetooth</string>
+  <string name="state_off">Off</string>
+  <string name="wifi_connected">Connected</string>
+  <string name="wifi_no_network">No network</string>
+  <string name="bt_none_connected">None connected</string>
+  <string name="bt_device">device</string>
+  <string name="weather_searching">searching…</string>
+
+  <!-- weather (Open-Meteo WMO codes) -->
+  <string name="weather_clear">Clear</string>
+  <string name="weather_partly_cloudy">Partly cloudy</string>
+  <string name="weather_overcast">Overcast</string>
+  <string name="weather_fog">Fog</string>
+  <string name="weather_thunderstorm">Thunderstorm</string>
+  <string name="weather_showers">Showers</string>
+  <string name="weather_rain">Rain</string>
+  <string name="weather_drizzle">Drizzle</string>
+
+  <!-- media card -->
+  <string name="media_music">MUSIC</string>
+  <string name="media_nothing_playing">Nothing playing</string>
+  <string name="media_tap_to_open">Tap to open the player</string>
+  <string name="media_need_access">See what\'s playing</string>
+  <string name="media_tap_to_allow">Tap to allow notification access</string>
+  <string name="media_playing">PLAYING · %s</string>
+  <string name="media_paused">PAUSED · %s</string>
+  <string name="media_last_played">LAST PLAYED · %s</string>
+
+  <!-- app drawer -->
+  <string name="all_apps">All apps</string>
+  <string name="choose_shortcut_app">Choose an app for this shortcut</string>
+  <string name="remove_shortcut">Remove shortcut</string>
+  <string name="close">Close</string>
+
+  <!-- "My car" page -->
+  <string name="car_label">MY CAR</string>
+  <string name="car_default_name">Your car</string>
+  <string name="car_default_details">Tap Edit to add its name and a photo</string>
+  <string name="car_edit">✎  Edit</string>
+  <string name="car_edit_title">My car</string>
+  <string name="car_name_hint">Name (e.g. Corolla)</string>
+  <string name="car_details_hint">Details (e.g. Toyota · 2019 · Silver)</string>
+  <string name="car_choose_photo">Choose photo</string>
+  <string name="car_remove_photo">Remove photo</string>
+  <string name="car_no_gallery">No gallery or file manager app found</string>
+  <string name="car_photo_error">Could not load that image</string>
+  <string name="save">Save</string>
+  <string name="cancel">Cancel</string>
+  <string name="trip">TRIP</string>
+  <string name="driving">DRIVING</string>
+  <string name="top_speed">TOP SPEED</string>
+  <string name="total">TOTAL</string>
+  <string name="trip_none">No trip right now · measured by Kesh Car\'s GPS</string>
+  <string name="trip_since">Trip since %s · measured by GPS</string>
+  <string name="vehicle_data">Vehicle data  ›</string>
+</resources>

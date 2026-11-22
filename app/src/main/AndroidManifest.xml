@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- map position, speed and trip stats -->
+  <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+  <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+  <!-- map tiles, weather and (optional) online street names -->
+  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+  <!-- Wi-Fi / Bluetooth status tiles -->
+  <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+  <uses-permission android:name="android.permission.BLUETOOTH" />
+  <!-- only used to come back to the front by itself when the head unit powers on (background activity start) -->
+  <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+  <queries>
+    <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent>
+    <intent><action android:name="android.media.browse.MediaBrowserService" /></intent>
+    <intent><action android:name="android.intent.action.MEDIA_BUTTON" /></intent>
+  </queries>
+  <application android:label="@string/app_name" android:icon="@drawable/ic_launcher" android:theme="@style/Theme.KeshCar" android:allowBackup="false">
+    <activity android:name=".Home" android:exported="true" android:launchMode="singleTask" android:stateNotNeeded="true"
+        android:screenOrientation="landscape" android:resumeWhilePausing="true" android:excludeFromRecents="true"
+        android:configChanges="orientation|screenSize|keyboard|keyboardHidden|navigation|uiMode|screenLayout|smallestScreenSize|density">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.HOME" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity>
+    <service android:name=".MediaListener" android:exported="true" android:label="@string/app_name"
+        android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+      <intent-filter><action android:name="android.service.notification.NotificationListenerService" /></intent-filter>
+    </service>
+  </application>
+</manifest>

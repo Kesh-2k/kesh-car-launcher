@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest an idea for Kesh Car
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would you like to do?
+      description: Describe the problem or the use case first, then the idea.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: How could it work?
+      description: Sketches and screenshots from other launchers are welcome.
+  - type: markdown
+    attributes:
+      value: |
+        Kesh Car aims to stay fast on cheap head units (1–2 GB RAM, slow eMMC), so features that need heavy
+        libraries or background services may be declined or made optional.

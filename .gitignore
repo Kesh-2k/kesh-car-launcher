@@ -1,0 +1,28 @@
+# Gradle / Android Studio
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+.cxx/
+.externalNativeBuild/
+captures/
+.DS_Store
+
+# Build outputs
+*.apk
+*.aab
+
+# Signing keys never go into the repo
+*.jks
+*.keystore
+keystore.properties
+
+# Your own offline street file (build it with tools/build-streets.py, see README)
+app/src/main/assets/streets.bin
+streets.bin
+*.geojson
+*.osm.pbf
+.env
+.env.*
+!.env.example

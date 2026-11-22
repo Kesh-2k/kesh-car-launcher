@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="osm_attribution">© colaboradores do OpenStreetMap</string>
+
+  <!-- mapa -->
+  <string name="you_are_on">VOCÊ ESTÁ EM</string>
+  <string name="searching_gps">Procurando GPS…</string>
+  <string name="gps_off">GPS desligado</string>
+  <string name="gps_off_label">GPS DESLIGADO</string>
+  <string name="gps_searching_label">PROCURANDO GPS</string>
+  <string name="gps_last_position_label">ÚLTIMA POSIÇÃO · PROCURANDO GPS</string>
+  <plurals name="satellites">
+    <item quantity="one">%d SATÉLITE</item>
+    <item quantity="other">%d SATÉLITES</item>
+  </plurals>
+  <string name="no_location_permission">Sem permissão de GPS</string>
+  <string name="offline_last_street">SEM INTERNET · ÚLTIMA RUA CONHECIDA</string>
+  <string name="streets_imported">Nomes de rua offline carregados</string>
+  <string name="streets_invalid">Esse arquivo não é um streets.bin do Kesh Car</string>
+  <string name="where_to">Para onde?</string>
+
+  <!-- atalhos rápidos -->
+  <string name="state_off">Desligado</string>
+  <string name="wifi_connected">Conectado</string>
+  <string name="wifi_no_network">Sem rede</string>
+  <string name="bt_none_connected">Nenhum conectado</string>
+  <string name="bt_device">aparelho</string>
+  <string name="weather_searching">procurando…</string>
+
+  <!-- tempo -->
+  <string name="weather_clear">Limpo</string>
+  <string name="weather_partly_cloudy">Poucas nuvens</string>
+  <string name="weather_overcast">Nublado</string>
+  <string name="weather_fog">Neblina</string>
+  <string name="weather_thunderstorm">Tempestade</string>
+  <string name="weather_showers">Pancadas</string>
+  <string name="weather_rain">Chuva</string>
+  <string name="weather_drizzle">Garoa</string>
+
+  <!-- música -->
+  <string name="media_music">MÚSICA</string>
+  <string name="media_nothing_playing">Nada tocando</string>
+  <string name="media_tap_to_open">Toque para abrir o player</string>
+  <string name="media_need_access">Veja o que está tocando</string>
+  <string name="media_tap_to_allow">Toque para permitir o acesso às notificações</string>
+  <string name="media_playing">TOCANDO · %s</string>
+  <string name="media_paused">PAUSADO · %s</string>
+  <string name="media_last_played">ÚLTIMA TOCADA · %s</string>
+
+  <!-- gaveta de apps -->
+  <string name="all_apps">Todos os apps</string>
+  <string name="choose_shortcut_app">Escolha o app para o atalho</string>
+  <string name="remove_shortcut">Remover atalho</string>
+  <string name="close">Fechar</string>
+
+  <!-- página "Meu carro" -->
+  <string name="car_label">MEU CARRO</string>
+  <string name="car_default_name">Seu carro</string>
+  <string name="car_default_details">Toque em Editar para pôr o nome e uma foto</string>
+  <string name="car_edit">✎  Editar</string>
+  <string name="car_edit_title">Meu carro</string>
+  <string name="car_name_hint">Nome (ex.: Corolla)</string>
+  <string name="car_details_hint">Detalhes (ex.: Toyota · 2019 · Prata)</string>
+  <string name="car_choose_photo">Escolher foto</string>
+  <string name="car_remove_photo">Remover foto</string>
+  <string name="car_no_gallery">Nenhum app de galeria ou de arquivos encontrado</string>
+  <string name="car_photo_error">Não deu para abrir essa imagem</string>
+  <string name="save">Salvar</string>
+  <string name="cancel">Cancelar</string>
+  <string name="trip">VIAGEM</string>
+  <string name="driving">DIRIGINDO</string>
+  <string name="top_speed">MÁXIMA</string>
+  <string name="total">TOTAL</string>
+  <string name="trip_none">Nenhuma viagem agora · conta pelo GPS do Kesh Car</string>
+  <string name="trip_since">Viagem desde %s · conta pelo GPS</string>
+  <string name="vehicle_data">Dados do veículo  ›</string>
+</resources>

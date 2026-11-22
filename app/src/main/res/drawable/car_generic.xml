@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generic side-view car shown on the "My car" page until the user picks a photo. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="520dp" android:height="210dp" android:viewportWidth="520" android:viewportHeight="210">
+  <!-- body: vertical gradient with hard stops (shoulder highlight, darker lower body) -->
+  <path android:pathData="M30,152 L22,140 L20,112 Q20,98 32,92 L60,50 Q66,40 80,38 L300,36 Q316,36 328,44 L390,86 L470,96 Q496,100 502,116 L506,138 Q506,150 494,152 L444,152 A44,44 0 0 0 356,152 L164,152 A44,44 0 0 0 76,152 Z">
+    <aapt:attr name="android:fillColor">
+      <gradient android:type="linear" android:startX="0" android:startY="36" android:endX="0" android:endY="152">
+          <item android:offset="0" android:color="#E2E8F0" />
+          <item android:offset="0.48" android:color="#CBD5E1" />
+          <item android:offset="0.48" android:color="#EEF2F7" />
+          <item android:offset="0.53" android:color="#EEF2F7" />
+          <item android:offset="0.53" android:color="#CBD5E1" />
+          <item android:offset="0.76" android:color="#CBD5E1" />
+          <item android:offset="0.76" android:color="#94A3B8" />
+          <item android:offset="0.91" android:color="#94A3B8" />
+          <item android:offset="0.91" android:color="#64748B" />
+          <item android:offset="1" android:color="#64748B" />
+      </gradient>
+    </aapt:attr>
+  </path>
+  <!-- windows -->
+  <path android:fillColor="#1E293B" android:pathData="M78,88 L98,54 Q102,47 110,47 L206,47 L206,88 Z" />
+  <path android:fillColor="#1E293B" android:pathData="M218,47 L298,47 Q309,47 317,53 L368,88 L218,88 Z" />
+  <path android:fillColor="#FFFFFF" android:fillAlpha="0.10" android:pathData="M110,47 L150,47 L122,88 L82,88 Z M240,47 L268,47 L240,88 L222,88 Z" />
+  <!-- mirror -->
+  <path android:fillColor="#334155" android:pathData="M352,76 L366,76 Q372,78 372,86 L352,88 Z" />
+  <!-- door lines and handles -->
+  <path android:strokeColor="#64748B" android:strokeWidth="2" android:pathData="M212,48 L212,140 M330,92 L334,140" />
+  <path android:fillColor="#475569" android:pathData="M184,100h20v5h-20z M302,100h20v5h-20z" />
+  <!-- lights -->
+  <path android:fillColor="#FDE68A" android:pathData="M476,104 L500,110 Q503,118 498,121 L472,114 Z" />
+  <path android:fillColor="#F43F5E" android:pathData="M20,106 L34,102 L34,120 L20,123 Z" />
+  <!-- wheels -->
+  <path android:fillColor="#0F172A" android:pathData="M82,160a38,38 0 1,0 76,0a38,38 0 1,0 -76,0z M362,160a38,38 0 1,0 76,0a38,38 0 1,0 -76,0z" />
+  <path android:fillColor="#94A3B8" android:pathData="M96,160a24,24 0 1,0 48,0a24,24 0 1,0 -48,0z M376,160a24,24 0 1,0 48,0a24,24 0 1,0 -48,0z" />
+  <path android:strokeColor="#64748B" android:strokeWidth="4" android:pathData="M120,138 L120,182 M98,160 L142,160 M400,138 L400,182 M378,160 L422,160" />
+  <path android:fillColor="#E2E8F0" android:pathData="M111,160a9,9 0 1,0 18,0a9,9 0 1,0 -18,0z M391,160a9,9 0 1,0 18,0a9,9 0 1,0 -18,0z" />
+</vector>
