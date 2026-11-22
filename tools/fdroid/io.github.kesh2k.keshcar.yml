@@ -1,0 +1,26 @@
+Categories:
+  - Theming
+  - Navigation
+License: MIT
+AuthorName: Kesh-2k
+SourceCode: https://github.com/Kesh-2k/kesh-car-launcher
+IssueTracker: https://github.com/Kesh-2k/kesh-car-launcher/issues
+Changelog: https://github.com/Kesh-2k/kesh-car-launcher/blob/main/CHANGELOG.md
+
+AutoName: Kesh Car
+
+RepoType: git
+Repo: https://github.com/Kesh-2k/kesh-car-launcher.git
+
+Builds:
+  - versionName: 1.0.1
+    versionCode: 2
+    commit: v1.0.1
+    subdir: app
+    gradle:
+      - yes
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 1.0.1
+CurrentVersionCode: 2

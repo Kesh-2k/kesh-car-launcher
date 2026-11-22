@@ -1,0 +1,10 @@
+<p>Kesh Car is a free, open-source home screen made for the Android head units found in many cars (the cheap 1280×720 units with RK3326, T3, UIS7862 and similar chips). It is tiny and fast, even on weak hardware.</p>
+<ul>
+<li><b>Map</b>: live OpenStreetMap that follows your GPS, with speedometer and automatic night mode.</li>
+<li><b>Media</b>: a big card that works with any music app (album art, play/pause, next/previous).</li>
+<li><b>At a glance</b>: clock, Wi-Fi and Bluetooth status, and current weather (Open-Meteo, no account).</li>
+<li><b>My car</b>: trip stats measured by GPS (distance, driving time, top speed), with your car's name and photo.</li>
+<li><b>Shortcuts</b>: sidebar with your favourite apps (navigation, music, radio, phone).</li>
+<li><b>Offline street names</b> (optional) built from OpenStreetMap data for your region.</li>
+</ul>
+<p>No ads, no tracking, no accounts. Map data © OpenStreetMap contributors (ODbL).</p>
