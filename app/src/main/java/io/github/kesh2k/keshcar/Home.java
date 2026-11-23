@@ -131,6 +131,7 @@ public class Home extends Activity {
     lm = (LocationManager) getSystemService(LOCATION_SERVICE);
     msm = (MediaSessionManager) getSystemService(MEDIA_SESSION_SERVICE);
     listener = new ComponentName(this, MediaListener.class);
+    mph = getSharedPreferences("home", MODE_PRIVATE).getBoolean("mph", false);
     setContentView(build());
     fillApps();
     new Thread(() -> { streets.load(this); ui.post(this::maybeStreet); }).start();
@@ -705,16 +706,45 @@ public class Home extends Activity {
     if (tripKm == null) return;
     loadTrip();
     boolean old = tripLastAt == 0 || System.currentTimeMillis() - tripLastAt > 20 * 60_000L || tripM < 100;
-    float km = old ? 0 : tripM / 1000f;
-    Locale loc = Locale.getDefault();
-    setIfChanged(tripKm, km < 10 ? String.format(loc, "%.1f km", km) : Math.round(km) + " km");
+    setIfChanged(tripKm, distance(old ? 0 : tripM, false));
     long min = old ? 0 : tripMs / 60_000;
     setIfChanged(tripTime, min >= 60 ? (min / 60) + "h" + String.format(Locale.US, "%02d", min % 60) : min + " min");
-    setIfChanged(tripMax, (old ? 0 : Math.round(tripMaxKmh)) + " km/h");
-    float tot = totalM / 1000f;
-    setIfChanged(totalKm, tot < 100 ? String.format(loc, "%.1f km", tot) : String.format(loc, "%,d km", Math.round(tot)));
+    setIfChanged(tripMax, (old ? 0 : Math.round(mph ? tripMaxKmh / KM_PER_MI : tripMaxKmh)) + " " + speedUnitLabel());
+    setIfChanged(totalKm, distance(totalM, true));
     setIfChanged(tripSince, old ? getString(R.string.trip_none)
         : getString(R.string.trip_since, DateFormat.getTimeFormat(this).format(new Date(tripStart))));
+  }
+
+  // ---------- units: km/h + km or mph + miles ----------
+
+  static final float KM_PER_MI = 1.609344f;
+  boolean mph;
+  float lastMps = -1;
+  TextView speedUnit;
+
+  String speedUnitLabel() { return mph ? "mph" : "km/h"; }
+
+  /** Distance in the chosen unit: one decimal below 10 (100 for the odometer-like total), whole numbers above. */
+  String distance(float meters, boolean total) {
+    float v = meters / 1000f / (mph ? KM_PER_MI : 1f);
+    String u = mph ? " mi" : " km";
+    Locale loc = Locale.getDefault();
+    return v < (total ? 100 : 10) ? String.format(loc, "%.1f", v) + u : String.format(loc, "%,d", Math.round(v)) + u;
+  }
+
+  void showSpeed() {
+    if (lastMps < 0) return;
+    int v = Math.round(lastMps * (mph ? 2.2369363f : 3.6f));
+    setIfChanged(speedNum, String.valueOf(v < 2 ? 0 : v));
+  }
+
+  void setMph(boolean on) {
+    if (on == mph) return;
+    mph = on;
+    getSharedPreferences("home", MODE_PRIVATE).edit().putBoolean("mph", on).apply();
+    speedUnit.setText(speedUnitLabel());
+    showSpeed();
+    updateTrip();
   }
 
   View buildMap() {
@@ -766,9 +796,9 @@ public class Home extends Activity {
     speedNum.setGravity(Gravity.CENTER);
     speedNum.setText("--");
     sp.addView(speedNum, new LinearLayout.LayoutParams(-2, -2));
-    TextView u = text(12, MUTED, "sans-serif");
-    u.setText(R.string.speed_unit);
-    sp.addView(u, new LinearLayout.LayoutParams(-2, -2));
+    speedUnit = text(12, MUTED, "sans-serif");
+    speedUnit.setText(speedUnitLabel());
+    sp.addView(speedUnit, new LinearLayout.LayoutParams(-2, -2));
     FrameLayout.LayoutParams spl = new FrameLayout.LayoutParams(dp(100), dp(100), Gravity.TOP | Gravity.END);
     spl.setMargins(0, dp(16), dp(16), 0);
     box.addView(sp, spl);
@@ -792,6 +822,22 @@ public class Home extends Activity {
     FrameLayout.LayoutParams rcl = new FrameLayout.LayoutParams(dp(54), dp(54), Gravity.BOTTOM | Gravity.END);
     rcl.setMargins(0, 0, dp(18), dp(104));
     box.addView(rc, rcl);
+
+    // settings: units, offline maps, street file
+    ImageView gear = new ImageView(this);
+    gear.setImageDrawable(new Gear());
+    gear.setPadding(dp(14), dp(14), dp(14), dp(14));
+    GradientDrawable gb0 = new GradientDrawable();
+    gb0.setShape(GradientDrawable.OVAL);
+    gb0.setColor(0xF2FFFFFF);
+    gear.setBackground(gb0);
+    gear.setElevation(dp(4));
+    gear.setContentDescription(getString(R.string.settings));
+    gear.setOnClickListener(v -> openSettings());
+    press(gear);
+    FrameLayout.LayoutParams gl = new FrameLayout.LayoutParams(dp(54), dp(54), Gravity.BOTTOM | Gravity.END);
+    gl.setMargins(0, 0, dp(18), dp(170));
+    box.addView(gear, gl);
 
     // bottom bar: current street + "Where to?"
     LinearLayout bar = new LinearLayout(this);
@@ -1089,6 +1135,74 @@ public class Home extends Activity {
     drawer = null;
   }
 
+  // ---------- settings ----------
+
+  AlertDialog settingsDlg;
+  LinearLayout settingsBody;
+
+  /** Settings dialog (gear button on the map). */
+  void openSettings() {
+    android.widget.ScrollView sv = new android.widget.ScrollView(this);
+    settingsBody = new LinearLayout(this);
+    settingsBody.setOrientation(LinearLayout.VERTICAL);
+    settingsBody.setPadding(dp(24), dp(4), dp(24), dp(8));
+    sv.addView(settingsBody);
+    settingsDlg = new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+        .setTitle(R.string.settings)
+        .setView(sv)
+        .setPositiveButton(R.string.close, null)
+        .create();
+    settingsDlg.setOnDismissListener(d -> { settingsDlg = null; settingsBody = null; immersive(); });
+    fillSettings();
+    settingsDlg.show();
+  }
+
+  /** (Re)draws the settings content, so a change shows up right away. */
+  void fillSettings() {
+    LinearLayout col = settingsBody;
+    if (col == null) return;
+    col.removeAllViews();
+
+    settingsHead(col, R.string.settings_units);
+    LinearLayout units = new LinearLayout(this);
+    TextView km = choice(getString(R.string.units_metric), !mph), mi = choice(getString(R.string.units_imperial), mph);
+    km.setOnClickListener(v -> { setMph(false); fillSettings(); });
+    mi.setOnClickListener(v -> { setMph(true); fillSettings(); });
+    units.addView(km);
+    LinearLayout.LayoutParams ml = new LinearLayout.LayoutParams(-2, -2);
+    ml.leftMargin = dp(10);
+    units.addView(mi, ml);
+    col.addView(units);
+
+    settingsHead(col, R.string.settings_streets);
+    TextView sh = text(14, MUTED, "sans-serif");
+    sh.setText(R.string.settings_streets_hint);
+    col.addView(sh);
+    TextView imp = chip(getString(R.string.settings_streets_import));
+    imp.setOnClickListener(v -> { if (settingsDlg != null) settingsDlg.dismiss(); pickStreets(); });
+    LinearLayout.LayoutParams il = new LinearLayout.LayoutParams(-2, -2);
+    il.topMargin = dp(10);
+    col.addView(imp, il);
+  }
+
+  void settingsHead(LinearLayout col, int res) {
+    TextView h = text(12, MUTED, "sans-serif-medium");
+    h.setLetterSpacing(0.12f);
+    h.setText(res);
+    h.setPadding(0, dp(col.getChildCount() == 0 ? 8 : 22), 0, dp(8));
+    col.addView(h);
+  }
+
+  /** Chip that shows whether it is the selected option. */
+  TextView choice(String label, boolean on) {
+    TextView t = chip(label);
+    GradientDrawable g = new GradientDrawable();
+    g.setColor(on ? ACCENT : 0x26FFFFFF);
+    g.setCornerRadius(dp(14));
+    t.setBackground(g);
+    return t;
+  }
+
   // ---------- clock and day/night map ----------
 
   void updateClock() {
@@ -1139,7 +1253,7 @@ public class Home extends Activity {
     @Override public void onLocationChanged(Location l) { onLocation(l); }
     @Override public void onStatusChanged(String p, int s, Bundle e) {}
     @Override public void onProviderEnabled(String p) { if (!hasFix) { streetLabel.setText(gpsLabel()); if (lastLoc == null) street.setText(R.string.searching_gps); } }
-    @Override public void onProviderDisabled(String p) { hasFix = false; speedNum.setText("--"); streetLabel.setText(R.string.gps_off_label); }
+    @Override public void onProviderDisabled(String p) { hasFix = false; lastMps = -1; speedNum.setText("--"); streetLabel.setText(R.string.gps_off_label); }
   };
 
   /** true after the first real GPS fix (the saved position does not count). */
@@ -1212,7 +1326,8 @@ public class Home extends Activity {
     float secs = prevLoc == null ? 0 : (l.getTime() - prevLoc.getTime()) / 1000f;
     float mps = l.hasSpeed() ? l.getSpeed() : (secs > 0 ? dist / secs : 0);
     int kmh = Math.round(mps * 3.6f);
-    setIfChanged(speedNum, String.valueOf(kmh < 2 ? 0 : kmh));
+    lastMps = mps;
+    showSpeed();
     // heading: the GPS bearing while moving; otherwise computed from the displacement (some GPS chips don't send it)
     if (l.hasBearing() && mps > 1.5f) { heading = l.getBearing(); headingOk = true; }
     else if (prevLoc != null && dist >= 8) { heading = (prevLoc.bearingTo(l) + 360) % 360; headingOk = true; }
@@ -2138,6 +2253,24 @@ public class Home extends Activity {
       p.setStrokeCap(Paint.Cap.ROUND);
       c.drawLine(x + w * 0.5f, y + h * 0.28f, x + w * 0.5f, y + h * 0.72f, p);
       c.drawLine(x + w * 0.28f, y + h * 0.5f, x + w * 0.72f, y + h * 0.5f, p);
+    }
+  }
+
+  /** Settings cog. */
+  static class Gear extends Shape {
+    @Override public void draw(Canvas c) {
+      float w = getBounds().width(), x = getBounds().left + w / 2, y = getBounds().top + getBounds().height() / 2f;
+      p.setStyle(Paint.Style.FILL);
+      p.setColor(0xFF334155);
+      for (int i = 0; i < 8; i++) {
+        c.save();
+        c.rotate(i * 45, x, y);
+        c.drawRoundRect(x - w * 0.08f, y - w * 0.48f, x + w * 0.08f, y - w * 0.25f, w * 0.03f, w * 0.03f, p);
+        c.restore();
+      }
+      c.drawCircle(x, y, w * 0.33f, p);
+      p.setColor(0xFFFFFFFF);
+      c.drawCircle(x, y, w * 0.13f, p);
     }
   }
 
