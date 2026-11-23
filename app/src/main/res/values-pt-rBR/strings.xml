@@ -83,4 +83,47 @@
   <string name="settings_streets">NOMES DE RUA OFFLINE</string>
   <string name="settings_streets_hint">Carregue um streets.bin feito para a sua região (veja o README) para mostrar o nome das ruas sem internet.</string>
   <string name="settings_streets_import">Importar streets.bin…</string>
+
+  <!-- mapas offline -->
+  <string name="settings_offline_maps">MAPAS OFFLINE</string>
+  <string name="offline_none">Nenhum mapa offline ainda. Escolha uma área para guardar o mapa dela na central e usar sem internet.</string>
+  <string name="offline_area_info">%1$s · detalhe %2$s%3$s</string>
+  <string name="offline_other_server">outro servidor de mapa</string>
+  <string name="offline_show">Ver</string>
+  <string name="offline_delete">Apagar</string>
+  <string name="offline_delete_confirm">Apagar o mapa offline \"%s\"?</string>
+  <string name="offline_choose_area">+ Escolher área para baixar</string>
+  <string name="offline_downloading">⬇ %1$s · %2$d%%</string>
+  <string name="offline_done">Mapa offline \"%s\" pronto</string>
+  <string name="offline_partial">Mapa offline \"%1$s\" salvo, mas %2$d partes falharam (a internet caiu?). Baixe de novo para completar.</string>
+  <string name="offline_failed">Não foi possível baixar o mapa. Confira a internet.</string>
+  <string name="offline_cancel_confirm">Parar de baixar \"%s\"? O que já baixou é descartado.</string>
+  <string name="offline_stop">Parar</string>
+  <string name="offline_keep">Continuar baixando</string>
+  <string name="detail_low">baixo</string>
+  <string name="detail_medium">médio</string>
+  <string name="detail_high">alto</string>
+  <string name="detail_max">máximo</string>
+  <string name="area_title">MAPA OFFLINE · MOVA E AMPLIE O MAPA ATÉ A ÁREA CABER NO QUADRO</string>
+  <string name="area_search_hint">Buscar cidade ou lugar</string>
+  <string name="area_search">Buscar</string>
+  <string name="area_not_found">Lugar não encontrado (ou sem internet)</string>
+  <string name="area_detail">Detalhe: %s</string>
+  <string name="area_download">Baixar</string>
+  <string name="area_size">%1$s partes · cerca de %2$s</string>
+  <string name="area_osm_limit">Grande demais para os servidores do OpenStreetMap (eles permitem 250 partes detalhadas por download). Amplie o mapa, diminua o detalhe ou use seu próprio servidor em Ajustes.</string>
+  <string name="area_too_big">Área grande demais. Amplie o mapa ou diminua o detalhe.</string>
+  <string name="area_name_title">Nome deste mapa</string>
+  <string name="area_name_hint">ex.: Minha cidade</string>
+  <string name="area_default_name">Mapa %d</string>
+
+  <!-- servidor de mapa -->
+  <string name="settings_server">SERVIDOR DO MAPA</string>
+  <string name="server_osm">OpenStreetMap (padrão)</string>
+  <string name="server_osm_short">OpenStreetMap</string>
+  <string name="server_hint">Com seu próprio servidor, ou um serviço que permita uso offline, dá para baixar áreas maiores.</string>
+  <string name="server_change">Trocar servidor…</string>
+  <string name="server_title">Servidor do mapa</string>
+  <string name="server_help">Endereço de tiles raster com {z}, {x} e {y}. Confira se os termos do serviço permitem o uso que você faz.</string>
+  <string name="server_invalid">Endereço inválido: precisa começar com http(s):// e ter {z}, {x} e {y}</string>
 </resources>

@@ -53,7 +53,16 @@ import android.widget.Toast;
 
 import org.json.JSONObject;
 import org.osmdroid.config.Configuration;
+import org.osmdroid.events.MapListener;
+import org.osmdroid.events.ScrollEvent;
+import org.osmdroid.events.ZoomEvent;
+import org.osmdroid.tileprovider.MapTileProviderBasic;
+import org.osmdroid.tileprovider.cachemanager.CacheManager;
+import org.osmdroid.tileprovider.modules.SqliteArchiveTileWriter;
+import org.osmdroid.tileprovider.tilesource.OnlineTileSourceBase;
 import org.osmdroid.tileprovider.tilesource.XYTileSource;
+import org.osmdroid.util.BoundingBox;
+import org.osmdroid.util.MapTileIndex;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Overlay;
@@ -124,7 +133,10 @@ public class Home extends Activity {
     super.onCreate(b);
     org.osmdroid.config.IConfigurationProvider c = Configuration.getInstance();
     c.setUserAgentValue(USER_AGENT);
-    c.setOsmdroidBasePath(new File(getCacheDir(), "osm"));
+    // base path = where osmdroid looks for offline archives (downloaded areas); the tile cache stays in cache/
+    File osm = OfflineMaps.dir(this);
+    osm.mkdirs();
+    c.setOsmdroidBasePath(osm);
     c.setOsmdroidTileCache(new File(getCacheDir(), "osm/tiles"));
     c.setTileFileSystemCacheMaxBytes(300L * 1024 * 1024);
     c.setTileFileSystemCacheTrimBytes(250L * 1024 * 1024);
@@ -193,7 +205,7 @@ public class Home extends Activity {
 
   @Override public void onWindowFocusChanged(boolean f) { super.onWindowFocusChanged(f); if (f) immersive(); }
 
-  @Override public void onBackPressed() { if (drawer != null) closeDrawer(); else showPage(0); }
+  @Override public void onBackPressed() { if (drawer != null) closeDrawer(); else if (areaBox != null) closeAreaPicker(); else showPage(0); }
 
   @Override protected void onNewIntent(Intent i) { super.onNewIntent(i); if (drawer != null) closeDrawer(); }
 
@@ -305,6 +317,7 @@ public class Home extends Activity {
     FrameLayout.LayoutParams dlp = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.CENTER_HORIZONTAL);
     dlp.topMargin = dp(12);
     pager.addView(dl, dlp);
+    dotsBar = dl;
     pager.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, orr, ob) -> placePages(false));
     paintDots();
     return pager;
@@ -349,6 +362,7 @@ public class Home extends Activity {
     boolean multi, wasFollowing;
     Pager(Context c) { super(c); }
     @Override public boolean dispatchTouchEvent(MotionEvent e) {
+      if (areaBox != null) return super.dispatchTouchEvent(e);
       switch (e.getActionMasked()) {
         case MotionEvent.ACTION_DOWN: x0 = e.getX(); y0 = e.getY(); t0 = e.getEventTime(); multi = false; wasFollowing = following; break;
         case MotionEvent.ACTION_POINTER_DOWN: multi = true; break;
@@ -747,8 +761,13 @@ public class Home extends Activity {
     updateTrip();
   }
 
+  FrameLayout mapBox;
+  View speedBox, recenterBtn, gearBtn, streetBar, dotsBar;
+  int mapOffsetY;
+
   View buildMap() {
     FrameLayout box = new FrameLayout(this);
+    mapBox = box;
     clip(box, dp(26));
     map = new MapView(this);
     dark = isNight();
@@ -764,7 +783,7 @@ public class Home extends Activity {
     map.getController().setCenter(new GeoPoint(20.0, 0.0));
     me = new Me();
     // the car sits in the lower third of the map to show more of the road ahead
-    map.addOnFirstLayoutListener((v, l, t, r, b) -> map.setMapCenterOffset(0, (b - t) / 5));
+    map.addOnFirstLayoutListener((v, l, t, r, b) -> { mapOffsetY = (b - t) / 5; if (areaBox == null) map.setMapCenterOffset(0, mapOffsetY); });
     map.getOverlays().add(me);
     map.setOnTouchListener((v, e) -> { if (e.getActionMasked() == MotionEvent.ACTION_MOVE) following = false; return false; });
     box.addView(map, new FrameLayout.LayoutParams(-1, -1));
@@ -780,6 +799,19 @@ public class Home extends Activity {
     FrameLayout.LayoutParams al = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.START);
     al.setMargins(dp(14), dp(14), 0, 0);
     box.addView(attr, al);
+
+    // offline map download in progress (tap to cancel)
+    dlChip = text(13, TXT, "sans-serif-medium");
+    dlChip.setPadding(dp(12), dp(6), dp(12), dp(6));
+    GradientDrawable dcb = new GradientDrawable();
+    dcb.setColor(0xE6111827);
+    dcb.setCornerRadius(dp(10));
+    dlChip.setBackground(dcb);
+    dlChip.setVisibility(View.GONE);
+    dlChip.setOnClickListener(v -> confirmCancelDownload());
+    FrameLayout.LayoutParams dcl = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.START);
+    dcl.setMargins(dp(14), dp(44), 0, 0);
+    box.addView(dlChip, dcl);
 
     // speed in the corner
     LinearLayout sp = new LinearLayout(this);
@@ -802,6 +834,7 @@ public class Home extends Activity {
     FrameLayout.LayoutParams spl = new FrameLayout.LayoutParams(dp(100), dp(100), Gravity.TOP | Gravity.END);
     spl.setMargins(0, dp(16), dp(16), 0);
     box.addView(sp, spl);
+    speedBox = sp;
 
     // re-center on the car
     ImageView rc = new ImageView(this);
@@ -822,6 +855,7 @@ public class Home extends Activity {
     FrameLayout.LayoutParams rcl = new FrameLayout.LayoutParams(dp(54), dp(54), Gravity.BOTTOM | Gravity.END);
     rcl.setMargins(0, 0, dp(18), dp(104));
     box.addView(rc, rcl);
+    recenterBtn = rc;
 
     // settings: units, offline maps, street file
     ImageView gear = new ImageView(this);
@@ -838,6 +872,7 @@ public class Home extends Activity {
     FrameLayout.LayoutParams gl = new FrameLayout.LayoutParams(dp(54), dp(54), Gravity.BOTTOM | Gravity.END);
     gl.setMargins(0, 0, dp(18), dp(170));
     box.addView(gear, gl);
+    gearBtn = gear;
 
     // bottom bar: current street + "Where to?"
     LinearLayout bar = new LinearLayout(this);
@@ -876,6 +911,7 @@ public class Home extends Activity {
     FrameLayout.LayoutParams bl = new FrameLayout.LayoutParams(-1, dp(76), Gravity.BOTTOM);
     bl.setMargins(dp(14), 0, dp(14), dp(14));
     box.addView(bar, bl);
+    streetBar = bar;
     return box;
   }
 
@@ -1174,6 +1210,74 @@ public class Home extends Activity {
     units.addView(mi, ml);
     col.addView(units);
 
+    settingsHead(col, R.string.settings_offline_maps);
+    java.util.List<OfflineMaps.Area> areas = OfflineMaps.load(this);
+    if (areas.isEmpty() && dlArea == null) {
+      TextView none = text(14, MUTED, "sans-serif");
+      none.setText(R.string.offline_none);
+      col.addView(none);
+    }
+    for (final OfflineMaps.Area a : areas) {
+      LinearLayout row = new LinearLayout(this);
+      row.setGravity(Gravity.CENTER_VERTICAL);
+      row.setPadding(0, dp(4), 0, dp(4));
+      LinearLayout t = new LinearLayout(this);
+      t.setOrientation(LinearLayout.VERTICAL);
+      TextView n = text(16, TXT, "sans-serif-medium");
+      n.setText(a.name);
+      n.setSingleLine(true);
+      n.setEllipsize(TextUtils.TruncateAt.END);
+      t.addView(n);
+      TextView d = text(13, MUTED, "sans-serif");
+      d.setText(getString(R.string.offline_area_info, android.text.format.Formatter.formatShortFileSize(this, a.file(this).length()),
+          detailName(a.maxZoom), a.source.equals(tiles().name()) ? "" : " · " + getString(R.string.offline_other_server)));
+      t.addView(d);
+      row.addView(t, new LinearLayout.LayoutParams(0, -2, 1));
+      TextView show = text(15, TXT, "sans-serif-medium");
+      show.setText(R.string.offline_show);
+      show.setPadding(dp(14), dp(10), dp(14), dp(10));
+      show.setOnClickListener(v -> {
+        if (settingsDlg != null) settingsDlg.dismiss();
+        following = false;
+        map.zoomToBoundingBox(new BoundingBox(a.north, a.east, a.south, a.west), true, dp(30));
+      });
+      row.addView(show);
+      TextView rm = text(15, 0xFFFDA4AF, "sans-serif-medium");
+      rm.setText(R.string.offline_delete);
+      rm.setPadding(dp(14), dp(10), 0, dp(10));
+      rm.setOnClickListener(v -> new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+          .setMessage(getString(R.string.offline_delete_confirm, a.name))
+          .setPositiveButton(R.string.offline_delete, (x, w) -> { OfflineMaps.remove(this, a); reloadTiles(); fillSettings(); })
+          .setNegativeButton(R.string.cancel, null).show());
+      row.addView(rm);
+      col.addView(row);
+    }
+    if (dlArea != null) {
+      TextView p = text(14, TXT, "sans-serif");
+      p.setText(dlChip.getText());
+      col.addView(p);
+    } else {
+      TextView add = chip(getString(R.string.offline_choose_area));
+      add.setOnClickListener(v -> { if (settingsDlg != null) settingsDlg.dismiss(); startAreaPicker(); });
+      LinearLayout.LayoutParams al = new LinearLayout.LayoutParams(-2, -2);
+      al.topMargin = dp(10);
+      col.addView(add, al);
+    }
+
+    settingsHead(col, R.string.settings_server);
+    TextView srv = text(14, TXT, "sans-serif");
+    srv.setText(tileUrl().isEmpty() ? getString(R.string.server_osm) : tileUrl());
+    col.addView(srv);
+    TextView sh0 = text(13, MUTED, "sans-serif");
+    sh0.setText(R.string.server_hint);
+    sh0.setPadding(0, dp(4), 0, 0);
+    col.addView(sh0);
+    TextView chg = chip(getString(R.string.server_change));
+    chg.setOnClickListener(v -> editServer());
+    LinearLayout.LayoutParams cl = new LinearLayout.LayoutParams(-2, -2);
+    cl.topMargin = dp(10);
+    col.addView(chg, cl);
+
     settingsHead(col, R.string.settings_streets);
     TextView sh = text(14, MUTED, "sans-serif");
     sh.setText(R.string.settings_streets_hint);
@@ -1183,6 +1287,408 @@ public class Home extends Activity {
     LinearLayout.LayoutParams il = new LinearLayout.LayoutParams(-2, -2);
     il.topMargin = dp(10);
     col.addView(imp, il);
+  }
+
+  /** Tile server URL template (empty = OpenStreetMap). */
+  void editServer() {
+    final EditText e = new EditText(this);
+    e.setSingleLine(true);
+    e.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
+    e.setHint("https://tile.example.com/{z}/{x}/{y}.png");
+    e.setText(tileUrl());
+    FrameLayout f = new FrameLayout(this);
+    f.setPadding(dp(24), dp(8), dp(24), 0);
+    f.addView(e);
+    AlertDialog d = new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+        .setTitle(R.string.server_title)
+        .setMessage(R.string.server_help)
+        .setView(f)
+        .setPositiveButton(R.string.save, (x, w) -> {
+          String u = e.getText().toString().trim();
+          if (!u.isEmpty() && (!u.matches("(?i)https?://.+") || !u.contains("{z}") || !u.contains("{x}") || !u.contains("{y}"))) {
+            Toast.makeText(this, R.string.server_invalid, Toast.LENGTH_LONG).show();
+            return;
+          }
+          getSharedPreferences("home", MODE_PRIVATE).edit().putString("tile_url", u).apply();
+          reloadTiles();
+          fillSettings();
+        })
+        .setNeutralButton(R.string.server_osm_short, (x, w) -> {
+          getSharedPreferences("home", MODE_PRIVATE).edit().putString("tile_url", "").apply();
+          reloadTiles();
+          fillSettings();
+        })
+        .setNegativeButton(R.string.cancel, null)
+        .create();
+    d.show();
+  }
+
+  String detailName(int zoom) {
+    int[] names = {R.string.detail_low, R.string.detail_medium, R.string.detail_high, R.string.detail_max};
+    for (int i = 0; i < OfflineMaps.DETAIL.length; i++) if (OfflineMaps.DETAIL[i] == zoom) return getString(names[i]);
+    return "z" + zoom;
+  }
+
+  // ---------- offline map: choose an area on the map, then download it ----------
+
+  FrameLayout areaBox;
+  AreaFrame areaFrame;
+  TextView areaInfo, areaDetail, areaGo;
+  EditText areaSearch;
+  String areaName;
+  boolean areaOk;
+  MapListener areaListener;
+  final Runnable areaUpdate = this::updateArea;
+
+  /** Rectangle in the middle of the map that will be downloaded; outside it is dimmed. */
+  class AreaFrame extends View {
+    final Paint dim = new Paint(), line = new Paint(Paint.ANTI_ALIAS_FLAG);
+    final android.graphics.Rect r = new android.graphics.Rect();
+    AreaFrame(Context c) {
+      super(c);
+      dim.setColor(0x8C000000);
+      line.setColor(Color.WHITE);
+      line.setStyle(Paint.Style.STROKE);
+      line.setStrokeWidth(dp(3));
+    }
+    android.graphics.Rect hole() {
+      r.set(dp(30), dp(88), getWidth() - dp(30), getHeight() - dp(150));
+      return r;
+    }
+    @Override protected void onDraw(Canvas c) {
+      android.graphics.Rect h = hole();
+      int w = getWidth(), ht = getHeight();
+      c.drawRect(0, 0, w, h.top, dim);
+      c.drawRect(0, h.bottom, w, ht, dim);
+      c.drawRect(0, h.top, h.left, h.bottom, dim);
+      c.drawRect(h.right, h.top, w, h.bottom, dim);
+      c.drawRoundRect(h.left, h.top, h.right, h.bottom, dp(6), dp(6), line);
+    }
+  }
+
+  void startAreaPicker() {
+    if (areaBox != null || dlArea != null) return;
+    showPage(0);
+    following = false;
+    if (rotAnim != null) rotAnim.cancel();
+    map.setMapOrientation(0);
+    map.setMapCenterOffset(0, 0);
+    if (map.getZoomLevelDouble() > 13 || map.getZoomLevelDouble() < 9) map.getController().setZoom(12.0);
+    for (View v : new View[]{speedBox, recenterBtn, gearBtn, streetBar, dotsBar}) v.setVisibility(View.GONE);
+    areaName = null;
+
+    areaBox = new FrameLayout(this);
+    areaFrame = new AreaFrame(this);
+    areaBox.addView(areaFrame, new FrameLayout.LayoutParams(-1, -1));
+
+    // search a place
+    LinearLayout top = new LinearLayout(this);
+    top.setGravity(Gravity.CENTER_VERTICAL);
+    areaSearch = new EditText(this);
+    areaSearch.setSingleLine(true);
+    areaSearch.setHint(R.string.area_search_hint);
+    areaSearch.setTextColor(0xFF0F172A);
+    areaSearch.setHintTextColor(0xFF64748B);
+    areaSearch.setTextSize(17);
+    areaSearch.setPadding(dp(18), 0, dp(18), 0);
+    areaSearch.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH);
+    GradientDrawable sbg = new GradientDrawable();
+    sbg.setColor(0xF7FFFFFF);
+    sbg.setCornerRadius(dp(16));
+    areaSearch.setBackground(sbg);
+    areaSearch.setOnEditorActionListener((v, id, ev) -> { searchArea(); return true; });
+    top.addView(areaSearch, new LinearLayout.LayoutParams(0, dp(52), 1));
+    TextView find = chip(getString(R.string.area_search));
+    find.setGravity(Gravity.CENTER);
+    find.setOnClickListener(v -> searchArea());
+    GradientDrawable fbg = new GradientDrawable();
+    fbg.setColor(0xE6111827);
+    fbg.setCornerRadius(dp(16));
+    find.setBackground(fbg);
+    LinearLayout.LayoutParams fl = new LinearLayout.LayoutParams(-2, dp(52));
+    fl.leftMargin = dp(10);
+    top.addView(find, fl);
+    FrameLayout.LayoutParams tl = new FrameLayout.LayoutParams(-1, -2, Gravity.TOP);
+    tl.setMargins(dp(14), dp(20), dp(14), 0);
+    areaBox.addView(top, tl);
+
+    // bottom card: size, detail, cancel, download
+    LinearLayout card = new LinearLayout(this);
+    card.setOrientation(LinearLayout.VERTICAL);
+    card.setPadding(dp(20), dp(12), dp(12), dp(12));
+    GradientDrawable cb = new GradientDrawable();
+    cb.setColor(0xF7FFFFFF);
+    cb.setCornerRadius(dp(22));
+    card.setBackground(cb);
+    card.setElevation(dp(6));
+    card.setClickable(true);
+    TextView head = text(11, 0xFF64748B, "sans-serif-medium");
+    head.setLetterSpacing(0.12f);
+    head.setText(R.string.area_title);
+    card.addView(head);
+    areaInfo = text(15, 0xFF0F172A, "sans-serif-medium");
+    areaInfo.setMaxLines(2);
+    card.addView(areaInfo);
+    LinearLayout btns = new LinearLayout(this);
+    btns.setGravity(Gravity.CENTER_VERTICAL);
+    btns.setPadding(0, dp(8), 0, 0);
+    areaDetail = lightChip("");
+    areaDetail.setOnClickListener(v -> {
+      int i = detailIndex();
+      getSharedPreferences("home", MODE_PRIVATE).edit().putInt("offline_detail", (i + 1) % OfflineMaps.DETAIL.length).apply();
+      updateArea();
+    });
+    btns.addView(areaDetail);
+    btns.addView(new View(this), new LinearLayout.LayoutParams(0, 1, 1));
+    TextView cancel = lightChip(getString(R.string.cancel));
+    cancel.setOnClickListener(v -> closeAreaPicker());
+    btns.addView(cancel);
+    areaGo = text(16, Color.WHITE, "sans-serif-medium");
+    areaGo.setText(R.string.area_download);
+    areaGo.setGravity(Gravity.CENTER);
+    areaGo.setPadding(dp(20), 0, dp(20), 0);
+    GradientDrawable gb = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, new int[]{0xFFFF4D6D, 0xFFE11D48});
+    gb.setCornerRadius(dp(14));
+    areaGo.setBackground(gb);
+    areaGo.setOnClickListener(v -> { if (areaOk) askAreaName(); });
+    press(areaGo);
+    LinearLayout.LayoutParams gl = new LinearLayout.LayoutParams(-2, dp(46));
+    gl.leftMargin = dp(10);
+    btns.addView(areaGo, gl);
+    card.addView(btns);
+    FrameLayout.LayoutParams cl = new FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM);
+    cl.setMargins(dp(14), 0, dp(14), dp(14));
+    areaBox.addView(card, cl);
+
+    mapBox.addView(areaBox, new FrameLayout.LayoutParams(-1, -1));
+    areaListener = new MapListener() {
+      @Override public boolean onScroll(ScrollEvent e) { ui.removeCallbacks(areaUpdate); ui.postDelayed(areaUpdate, 150); return false; }
+      @Override public boolean onZoom(ZoomEvent e) { ui.removeCallbacks(areaUpdate); ui.postDelayed(areaUpdate, 150); return false; }
+    };
+    map.addMapListener(areaListener);
+    areaBox.post(this::updateArea);
+  }
+
+  TextView lightChip(String label) {
+    TextView t = text(15, 0xFF0F172A, "sans-serif-medium");
+    t.setText(label);
+    t.setGravity(Gravity.CENTER_VERTICAL);
+    t.setPadding(dp(16), dp(11), dp(16), dp(11));
+    GradientDrawable g = new GradientDrawable();
+    g.setColor(0xFFE2E8F0);
+    g.setCornerRadius(dp(14));
+    t.setBackground(g);
+    press(t);
+    return t;
+  }
+
+  void closeAreaPicker() {
+    if (areaBox == null) return;
+    hideKeyboard();
+    ui.removeCallbacks(areaUpdate);
+    map.removeMapListener(areaListener);
+    mapBox.removeView(areaBox);
+    areaBox = null;
+    for (View v : new View[]{speedBox, recenterBtn, gearBtn, streetBar, dotsBar}) v.setVisibility(View.VISIBLE);
+    map.setMapCenterOffset(0, mapOffsetY);
+    following = true;
+    if (lastLoc != null) { map.getController().setZoom(16.5); map.getController().setCenter(new GeoPoint(lastLoc)); }
+    if (headingOk) rotateMap(-heading);
+  }
+
+  void hideKeyboard() {
+    try {
+      ((android.view.inputmethod.InputMethodManager) getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(mapBox.getWindowToken(), 0);
+    } catch (Exception ignored) {}
+  }
+
+  int detailIndex() {
+    int i = getSharedPreferences("home", MODE_PRIVATE).getInt("offline_detail", 1);
+    return i < 0 || i >= OfflineMaps.DETAIL.length ? 1 : i;
+  }
+
+  /** Geographic box under the frame (the map is north-up while choosing). */
+  BoundingBox areaBounds() {
+    android.graphics.Rect h = areaFrame.hole();
+    org.osmdroid.api.IGeoPoint a = map.getProjection().fromPixels(h.left, h.top), b = map.getProjection().fromPixels(h.right, h.bottom);
+    return new BoundingBox(a.getLatitude(), b.getLongitude(), b.getLatitude(), a.getLongitude());
+  }
+
+  void updateArea() {
+    if (areaBox == null || areaFrame.getWidth() == 0) return;
+    int zmax = OfflineMaps.DETAIL[detailIndex()];
+    areaDetail.setText(getString(R.string.area_detail, detailName(zmax)));
+    BoundingBox bb = areaBounds();
+    long total = OfflineMaps.tileCount(bb.getLatNorth(), bb.getLatSouth(), bb.getLonEast(), bb.getLonWest(), OfflineMaps.MIN_ZOOM, zmax);
+    long detail = OfflineMaps.tileCount(bb.getLatNorth(), bb.getLatSouth(), bb.getLonEast(), bb.getLonWest(), OfflineMaps.OSM_DETAIL_ZOOM, zmax);
+    boolean osm = tileUrl().isEmpty();
+    areaOk = false;
+    if (osm && detail > OfflineMaps.OSM_MAX_DETAIL_TILES) {
+      areaInfo.setTextColor(0xFFE11D48);
+      areaInfo.setText(R.string.area_osm_limit);
+    } else if (total > OfflineMaps.MAX_TILES) {
+      areaInfo.setTextColor(0xFFE11D48);
+      areaInfo.setText(R.string.area_too_big);
+    } else {
+      areaOk = true;
+      areaInfo.setTextColor(0xFF0F172A);
+      areaInfo.setText(getString(R.string.area_size, String.format(Locale.getDefault(), "%,d", total),
+          android.text.format.Formatter.formatShortFileSize(this, total * OfflineMaps.AVG_TILE_BYTES)));
+    }
+    areaGo.setAlpha(areaOk ? 1f : 0.4f);
+  }
+
+  /** Finds a place with Nominatim (one request per search) and fits it in the frame. */
+  void searchArea() {
+    final String q = areaSearch.getText().toString().trim();
+    if (q.isEmpty()) return;
+    hideKeyboard();
+    new Thread(() -> {
+      String name = null;
+      BoundingBox bb = null;
+      try {
+        URL u = new URL("https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&accept-language="
+            + Locale.getDefault().toLanguageTag() + "&q=" + java.net.URLEncoder.encode(q, "UTF-8"));
+        HttpURLConnection c = (HttpURLConnection) u.openConnection();
+        c.setRequestProperty("User-Agent", USER_AGENT);
+        c.setConnectTimeout(8000);
+        c.setReadTimeout(8000);
+        String body;
+        try (InputStream in = c.getInputStream(); Scanner sc = new Scanner(in, "UTF-8").useDelimiter("\\A")) { body = sc.hasNext() ? sc.next() : "[]"; }
+        org.json.JSONArray a = new org.json.JSONArray(body);
+        if (a.length() > 0) {
+          JSONObject o = a.getJSONObject(0);
+          org.json.JSONArray b = o.getJSONArray("boundingbox"); // south, north, west, east
+          bb = new BoundingBox(b.getDouble(1), b.getDouble(3), b.getDouble(0), b.getDouble(2));
+          name = o.optString("name", "");
+          if (name.isEmpty()) name = o.optString("display_name", q).split(",")[0];
+        }
+      } catch (Exception ignored) {}
+      final BoundingBox fb = bb;
+      final String fn = name;
+      ui.post(() -> {
+        if (areaBox == null) return;
+        if (fb == null) { Toast.makeText(this, R.string.area_not_found, Toast.LENGTH_LONG).show(); return; }
+        areaName = fn;
+        double pad = 0.02; // a little margin around the place
+        double dl = (fb.getLatNorth() - fb.getLatSouth()) * pad, dn = (fb.getLonEast() - fb.getLonWest()) * pad;
+        map.zoomToBoundingBox(new BoundingBox(fb.getLatNorth() + dl, fb.getLonEast() + dn, fb.getLatSouth() - dl, fb.getLonWest() - dn), true, dp(160));
+      });
+    }).start();
+  }
+
+  void askAreaName() {
+    final EditText e = new EditText(this);
+    e.setSingleLine(true);
+    e.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+    e.setHint(R.string.area_name_hint);
+    e.setText(areaName != null ? areaName : "");
+    FrameLayout f = new FrameLayout(this);
+    f.setPadding(dp(24), dp(8), dp(24), 0);
+    f.addView(e);
+    AlertDialog d = new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+        .setTitle(R.string.area_name_title)
+        .setView(f)
+        .setPositiveButton(R.string.area_download, (x, w) -> {
+          String n = e.getText().toString().trim();
+          startDownload(areaBounds(), OfflineMaps.DETAIL[detailIndex()], n.isEmpty() ? getString(R.string.area_default_name, OfflineMaps.load(this).size() + 1) : n);
+          closeAreaPicker();
+        })
+        .setNegativeButton(R.string.cancel, null)
+        .create();
+    d.setOnDismissListener(x -> immersive());
+    d.show();
+  }
+
+  // ---------- offline map download (osmdroid CacheManager into a SQLite archive) ----------
+
+  OfflineMaps.Area dlArea;
+  CacheManager dlManager;
+  SqliteArchiveTileWriter dlWriter;
+  TextView dlChip;
+  int dlTotal;
+
+  void startDownload(BoundingBox bb, int zmax, String name) {
+    if (dlArea != null) return;
+    final OfflineMaps.Area a = new OfflineMaps.Area();
+    a.id = Long.toString(System.currentTimeMillis(), 36);
+    a.name = name;
+    a.north = bb.getLatNorth();
+    a.south = bb.getLatSouth();
+    a.east = bb.getLonEast();
+    a.west = bb.getLonWest();
+    a.maxZoom = zmax;
+    OnlineTileSourceBase src = tiles();
+    a.source = src.name();
+    try {
+      dlWriter = new SqliteArchiveTileWriter(a.file(this).getPath());
+      dlManager = new CacheManager(src, dlWriter, OfflineMaps.MIN_ZOOM, zmax);
+    } catch (Exception e) {
+      if (dlWriter != null) dlWriter.onDetach();
+      dlWriter = null;
+      a.file(this).delete();
+      Toast.makeText(this, R.string.offline_failed, Toast.LENGTH_LONG).show();
+      return;
+    }
+    dlArea = a;
+    dlTotal = 0;
+    dlProgress(0);
+    dlChip.setVisibility(View.VISIBLE);
+    final CacheManager mgr = dlManager;
+    dlManager.downloadAreaAsyncNoUI(getApplicationContext(), bb, OfflineMaps.MIN_ZOOM, zmax, new CacheManager.CacheManagerCallback() {
+      @Override public void onTaskComplete() { if (dlManager == mgr) finishDownload(0); }
+      @Override public void onTaskFailed(int errors) { if (dlManager == mgr) finishDownload(errors); }
+      @Override public void updateProgress(int progress, int zoom, int zmin, int zmax2) { if (dlManager == mgr) dlProgress(progress); }
+      @Override public void downloadStarted() {}
+      @Override public void setPossibleTilesInArea(int total) { dlTotal = total; }
+    });
+  }
+
+  void dlProgress(int done) {
+    int pct = dlTotal > 0 ? Math.min(100, done * 100 / dlTotal) : 0;
+    dlChip.setText(getString(R.string.offline_downloading, dlArea.name, pct));
+  }
+
+  void finishDownload(int errors) {
+    OfflineMaps.Area a = dlArea;
+    if (dlWriter != null) dlWriter.onDetach();
+    dlWriter = null;
+    dlManager = null;
+    dlArea = null;
+    dlChip.setVisibility(View.GONE);
+    if (a == null) return;
+    if (dlTotal > 0 && errors >= dlTotal) {
+      a.file(this).delete();
+      Toast.makeText(this, R.string.offline_failed, Toast.LENGTH_LONG).show();
+    } else {
+      a.tiles = dlTotal - errors;
+      OfflineMaps.add(this, a);
+      reloadTiles();
+      Toast.makeText(this, errors > 0 ? getString(R.string.offline_partial, a.name, errors) : getString(R.string.offline_done, a.name), Toast.LENGTH_LONG).show();
+    }
+    fillSettings();
+  }
+
+  void confirmCancelDownload() {
+    if (dlArea == null) return;
+    new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+        .setMessage(getString(R.string.offline_cancel_confirm, dlArea.name))
+        .setPositiveButton(R.string.offline_stop, (x, w) -> cancelDownload())
+        .setNegativeButton(R.string.offline_keep, null)
+        .show();
+  }
+
+  void cancelDownload() {
+    if (dlManager == null) return;
+    final OfflineMaps.Area a = dlArea;
+    final SqliteArchiveTileWriter w = dlWriter;
+    dlManager.cancelAllJobs();
+    dlManager = null;
+    dlWriter = null;
+    dlArea = null;
+    dlChip.setVisibility(View.GONE);
+    // the background task may still be writing its last tile: close and delete a moment later
+    ui.postDelayed(() -> { try { w.onDetach(); } catch (Exception ignored) {} a.file(this).delete(); new File(a.file(this).getPath() + "-journal").delete(); }, 3000);
   }
 
   void settingsHead(LinearLayout col, int res) {
@@ -1224,9 +1730,35 @@ public class Home extends Activity {
     return h >= 18 || h < 6;
   }
 
-  /** OpenStreetMap tiles (free, no key). At night the colors are inverted to darken it. */
-  static XYTileSource tiles() {
-    return new XYTileSource("osm", 3, 19, 256, ".png", new String[]{"https://tile.openstreetmap.org/"}, "© OpenStreetMap contributors");
+  /**
+   * Map tiles: OpenStreetMap (free, no key) unless the user set their own server in Settings.
+   * At night the colors are inverted to darken it.
+   */
+  OnlineTileSourceBase tiles() {
+    String url = tileUrl();
+    if (url.isEmpty()) return new XYTileSource("osm", 3, 19, 256, ".png", new String[]{"https://tile.openstreetmap.org/"}, "© OpenStreetMap contributors");
+    return new UrlTiles(url);
+  }
+
+  String tileUrl() { return getSharedPreferences("home", MODE_PRIVATE).getString("tile_url", ""); }
+
+  /** Tile server given as a URL template: https://example.com/{z}/{x}/{y}.png ({s} becomes "a"). */
+  static class UrlTiles extends OnlineTileSourceBase {
+    final String tpl;
+    UrlTiles(String tpl) {
+      super("url-" + Integer.toHexString(tpl.hashCode()), 3, 19, 256, "", new String[]{tpl}, "© OpenStreetMap contributors");
+      this.tpl = tpl;
+    }
+    @Override public String getTileURLString(long i) {
+      return tpl.replace("{z}", String.valueOf(MapTileIndex.getZoom(i))).replace("{x}", String.valueOf(MapTileIndex.getX(i)))
+          .replace("{y}", String.valueOf(MapTileIndex.getY(i))).replace("{s}", "a");
+    }
+  }
+
+  /** New tile provider: picks up added/removed offline archives and a changed tile server. */
+  void reloadTiles() {
+    map.setTileProvider(new MapTileProviderBasic(getApplicationContext(), tiles()));
+    applyNight();
   }
 
   void applyNight() {
