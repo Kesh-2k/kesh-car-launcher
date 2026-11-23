@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-11-22
+
+### Added
+- **Settings** (cog button on the map): units, offline maps, map server and offline street file in one place.
+- **km/h or mph**: speed bubble, trip distance, top speed and total distance follow the chosen unit (km or miles).
+- **Offline maps**: choose an area — move/zoom the map until it fits the frame, or search a city — pick the detail
+  level and download it. Saved areas work without internet, are never trimmed like the normal tile cache and can be
+  shown or deleted in Settings. Downloads from the default OpenStreetMap servers respect their usage policy
+  (at most 250 tiles at zoom 13+ per area).
+- **Custom map server** (raster `{z}/{x}/{y}` URL) for bigger offline areas or another map style.
+
 ## [1.0.1] - 2026-11-22
 
 - Gradle wrapper and F-Droid/fastlane store metadata (texts, icon, screenshots in English and Portuguese).

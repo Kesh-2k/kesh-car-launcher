@@ -30,6 +30,8 @@ launcher that is slow, cluttered or simply ugly. Kesh Car replaces it with a sin
 - **Live map in the middle** — OpenStreetMap that follows your position, heading-up rotation, speed bubble,
   one-tap re-center and an automatic **night mode** from 18:00 to 06:00. The last position is remembered, so the
   map is there the moment the car starts, even before the GPS gets a fix.
+- **Offline maps** — pick an area on the map (or search a city), choose the detail and download it; it keeps working
+  with no internet. See [Offline maps](#offline-maps).
 - **"You are on …"** — current street and city. Works **offline** with an optional street file for your region
   (see [Offline street names](#offline-street-names)), or online through the system geocoder / Nominatim.
 - **Now playing** — artwork, title, progress and controls for any app that publishes a media session (Spotify,
@@ -41,7 +43,7 @@ launcher that is slow, cluttered or simply ugly. Kesh Car replaces it with a sin
   with GPS trip stats: distance, driving time, top speed and total distance.
 - **App drawer** with every installed app.
 - **Comes back by itself** on Autochips/Jancar units, whose firmware force-closes third-party launchers on power-off.
-- **Languages:** English and Brazilian Portuguese (follows the system language). Units are metric (km, km/h, °C).
+- **Languages:** English and Brazilian Portuguese (follows the system language). Speed and distance in **km/h · km or mph · miles** (Settings); temperature in °C.
 
 ## Screenshots
 
@@ -98,7 +100,27 @@ adb shell appops set $P SYSTEM_ALERT_WINDOW allow   # optional
 - On "My car", tap **Edit** (or long-press the car) to set its name and details and pick a photo from the gallery.
   A photo with a transparent background (PNG) looks best.
 - Tap the weather tile to refresh it; tap the music card to open the player.
+- Tap the **cog** on the map for Settings: units (km/h or mph), offline maps, map server and the offline street file.
 - **Long-press the street bar** to import an offline street file (see below).
+
+## Offline maps
+
+1. Tap the **cog** on the map → **Choose an area to download**.
+2. Move and zoom the map until the area you want fits the white frame, or type a city in the search box.
+3. Tap **Detail** to choose how far you can zoom in offline (low = zoom 14, medium = 15, high = 16, maximum = 17).
+   The card shows the number of tiles and the approximate size.
+4. Tap **Download** and give it a name. A small chip on the map shows the progress (tap it to cancel).
+
+Downloaded areas live in the app's private storage (`files/osm/area-*.sqlite`), are used before the internet and are
+never trimmed like the normal tile cache. Settings lists them with their size; **Show** moves the map there and
+**Delete** removes them.
+
+**About the size limit:** the default OpenStreetMap tile servers are run by volunteers and their
+[usage policy](https://operations.osmfoundation.org/policies/tiles/) forbids downloading more than 250 tiles at zoom
+13 or higher for offline use. Kesh Car enforces that while it uses them — enough for a town at medium detail or a
+city at low detail. For bigger areas set your own tile server (or a provider whose terms allow offline use) in
+**Settings → Map server** as a raster URL template like `https://tiles.example.com/{z}/{x}/{y}.png`; then the limit
+is ~40,000 tiles per area.
 
 ## Offline street names
 
@@ -161,6 +183,7 @@ Without them `assembleRelease` produces an unsigned APK. Every push and pull req
 app/src/main/java/io/github/kesh2k/keshcar/
   Home.java           the whole launcher UI (views built in code)
   MediaListener.java  notification listener: media sessions + bring-to-front on power-on
+  OfflineMaps.java    offline map areas (tile counts, saved list, archive files)
   Streets.java        offline street/city lookup in streets.bin
 app/src/main/res/     strings (values/, values-pt-rBR/), icons, car illustration
 tools/build-streets.py  builds streets.bin from OSM data
@@ -177,6 +200,8 @@ photo and last position stay on the device. The only network requests are:
 | [Open-Meteo](https://open-meteo.com/) | Your position rounded to ~100 m | At most every 30 minutes |
 | Android system geocoder | Your position | Street name, only when there is no offline file for the area. On most devices this is provided by Google. |
 | [Nominatim](https://nominatim.org/) (OpenStreetMap) | Your position | Fallback when the system geocoder has no answer; at most once every 10 s, backing off after errors |
+| [Nominatim](https://nominatim.org/) search | The place you type | Only when you search a place while choosing an offline map area |
+| Your map server *(optional)* | Map tile coordinates | Only if you set one in Settings |
 
 Every request identifies itself as `KeshCar/1.0 (+https://github.com/Kesh-2k/kesh-car-launcher)` as the OSM
 usage policies require.
@@ -189,14 +214,17 @@ the map. A `streets.bin` you build from OSM data is a derived database and is al
 Weather data by [Open-Meteo](https://open-meteo.com/) (CC BY 4.0). Map rendering by
 [osmdroid](https://github.com/osmdroid/osmdroid) (Apache 2.0).
 
-The standard OpenStreetMap tile servers are run by volunteers with limited capacity; if Kesh Car ever becomes a
-heavy user, the plan is to make the tile source configurable (see the roadmap).
+The standard OpenStreetMap tile servers are run by volunteers with limited capacity; you can point Kesh Car at another
+tile server in Settings → Map server.
 
 ## Roadmap
 
-- [ ] Configurable tile source (CARTO, OpenFreeMap, self-hosted) and a native dark map style
+- [x] Offline maps for a chosen area
+- [x] Configurable tile server (raster URL template)
+- [ ] Native dark map style
 - [ ] Night mode by sunset/sunrise instead of fixed hours
-- [ ] Settings screen: units (mph/°F), 12/24 h, number of shortcuts
+- [x] Settings screen with km/h or mph
+- [ ] More settings: °F, 12/24 h, number of shortcuts
 - [ ] Steering-wheel key actions (next/previous/play on the music card)
 - [ ] More languages — contributions welcome
 - [ ] F-Droid release

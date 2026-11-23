@@ -1,0 +1,4 @@
+- Tela de Ajustes (engrenagem no mapa)
+- Velocidade e distância em km/h ou mph
+- Mapas offline: escolha a área no mapa ou busque a cidade, defina o detalhe e baixe
+- Servidor de mapa próprio
