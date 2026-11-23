@@ -86,4 +86,47 @@
   <string name="settings_streets">OFFLINE STREET NAMES</string>
   <string name="settings_streets_hint">Load a streets.bin built for your region (see the README) to show street names without internet.</string>
   <string name="settings_streets_import">Import streets.bin…</string>
+
+  <!-- offline maps -->
+  <string name="settings_offline_maps">OFFLINE MAPS</string>
+  <string name="offline_none">No offline maps yet. Choose an area to keep its map on the unit and use it without internet.</string>
+  <string name="offline_area_info">%1$s · %2$s detail%3$s</string>
+  <string name="offline_other_server">other map server</string>
+  <string name="offline_show">Show</string>
+  <string name="offline_delete">Delete</string>
+  <string name="offline_delete_confirm">Delete the offline map \"%s\"?</string>
+  <string name="offline_choose_area">+ Choose an area to download</string>
+  <string name="offline_downloading">⬇ %1$s · %2$d%%</string>
+  <string name="offline_done">Offline map \"%s\" ready</string>
+  <string name="offline_partial">Offline map \"%1$s\" saved, but %2$d tiles failed (internet dropped?). Download it again to complete it.</string>
+  <string name="offline_failed">Could not download the map. Check the internet connection.</string>
+  <string name="offline_cancel_confirm">Stop downloading \"%s\"? What was downloaded is discarded.</string>
+  <string name="offline_stop">Stop</string>
+  <string name="offline_keep">Keep downloading</string>
+  <string name="detail_low">low</string>
+  <string name="detail_medium">medium</string>
+  <string name="detail_high">high</string>
+  <string name="detail_max">maximum</string>
+  <string name="area_title">OFFLINE MAP · MOVE AND ZOOM THE MAP TO FIT THE AREA IN THE FRAME</string>
+  <string name="area_search_hint">Search a city or place</string>
+  <string name="area_search">Search</string>
+  <string name="area_not_found">Place not found (or no internet)</string>
+  <string name="area_detail">Detail: %s</string>
+  <string name="area_download">Download</string>
+  <string name="area_size">%1$s tiles · about %2$s</string>
+  <string name="area_osm_limit">Too big for the OpenStreetMap servers (they allow 250 detailed tiles per download). Zoom in, lower the detail or set your own map server in Settings.</string>
+  <string name="area_too_big">Area too big. Zoom in or lower the detail.</string>
+  <string name="area_name_title">Name this map</string>
+  <string name="area_name_hint">e.g. Home town</string>
+  <string name="area_default_name">Map %d</string>
+
+  <!-- map server -->
+  <string name="settings_server">MAP SERVER</string>
+  <string name="server_osm">OpenStreetMap (default)</string>
+  <string name="server_osm_short">OpenStreetMap</string>
+  <string name="server_hint">Your own server or a provider that allows offline use lets you download bigger areas.</string>
+  <string name="server_change">Change server…</string>
+  <string name="server_title">Map server</string>
+  <string name="server_help">Raster tile URL with {z}, {x} and {y}. Make sure its terms allow the use you make of it.</string>
+  <string name="server_invalid">Invalid URL: it must start with http(s):// and contain {z}, {x} and {y}</string>
 </resources>
