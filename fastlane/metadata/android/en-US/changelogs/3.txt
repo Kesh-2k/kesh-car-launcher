@@ -1,0 +1,4 @@
+- Settings screen (cog on the map)
+- Speed and distance in km/h or mph
+- Offline maps: choose an area on the map or search a city, pick the detail and download
+- Custom map server
