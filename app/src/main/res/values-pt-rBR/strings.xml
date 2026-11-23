@@ -74,4 +74,13 @@
   <string name="trip_none">Nenhuma viagem agora · conta pelo GPS do Kesh Car</string>
   <string name="trip_since">Viagem desde %s · conta pelo GPS</string>
   <string name="vehicle_data">Dados do veículo  ›</string>
+
+  <!-- ajustes -->
+  <string name="settings">Ajustes</string>
+  <string name="settings_units">VELOCIDADE E DISTÂNCIA</string>
+  <string name="units_metric">km/h · km</string>
+  <string name="units_imperial">mph · milhas</string>
+  <string name="settings_streets">NOMES DE RUA OFFLINE</string>
+  <string name="settings_streets_hint">Carregue um streets.bin feito para a sua região (veja o README) para mostrar o nome das ruas sem internet.</string>
+  <string name="settings_streets_import">Importar streets.bin…</string>
 </resources>
